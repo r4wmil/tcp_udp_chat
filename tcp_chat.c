@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -7,14 +8,41 @@
 
 #define MAX_BUF 4096
 
-int main() {
+// --- Parsing arguments ---
+
+struct args {
+	bool ok;
+	bool is_serv;
+	char* addr;
+	int port;
+} args;
+
+void parse_args(int argc, char** argv) {
+	if (argc != 4) {
+		printf("./tcp_chat [s/c] [address] [port]\n");
+		printf("E.g.: ./tcp_chat c 127.0.0.1 7777\n");
+		args.ok = false;
+		return;
+	}
+	args.is_serv = argv[1][0] == 's' ? 1 : 0;
+	args.addr = argv[2];
+	args.port = atoi(argv[3]);
+	args.ok = true;
+	return;
+}
+
+int main(int argc, char** argv) {
+
+	parse_args(argc, argv);
+	if (!args.ok) { return 1; }
+
 	int sock = socket(AF_INET, SOCK_STREAM, 0);
 
 	struct sockaddr_in serv_addr = {
 		.sin_family = AF_INET,
-		.sin_port = htons(7777)
+		.sin_port = htons(args.port)
 	};
-	inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr);
+	inet_pton(AF_INET, args.addr, &serv_addr.sin_addr);
 
 	int c = -1;
 	for (;;) {
